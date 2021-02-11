@@ -52,7 +52,9 @@ impl Memory {
         }
     }
     fn load_bin(&mut self, bin: &[u8]) {
-        self.v.copy_from_slice(&bin)
+        let n = bin.len();
+        let buf = &mut self.v[0 .. n];
+        buf.copy_from_slice(&bin)
     }
     fn read_u8(&self, i: u32) -> u8 {
         let mut buf = &self.v[i as usize ..];
@@ -99,6 +101,7 @@ impl Emulator {
         while self.eip < MEMORY_SIZE {
             let opcode = self.mem.read_u8(self.eip);
             if let Some(inst) = self.insts.get(&opcode) {
+                eprintln!("op: {:X}", opcode);
                 let inst = Arc::clone(&inst);
                 inst.exec(self);
             } else {
