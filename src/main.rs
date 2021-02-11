@@ -24,6 +24,7 @@ impl Instruction for short_jump {
     fn exec(&self, emu: &mut Emulator) {
         let diff: i8 = emu.mem.read_i8(emu.eip + 1);
         let d = diff + 2;
+        dbg!(d);
         if d >= 0 {
             emu.eip += d as u32;
         } else {
@@ -99,6 +100,8 @@ impl Emulator {
     }
     fn exec(&mut self) {
         while self.eip < MEMORY_SIZE {
+            eprintln!("eip: {}", self.eip);
+
             let opcode = self.mem.read_u8(self.eip);
             if let Some(inst) = self.insts.get(&opcode) {
                 eprintln!("op: {:X}", opcode);
