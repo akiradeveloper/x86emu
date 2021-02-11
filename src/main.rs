@@ -1,9 +1,9 @@
-use std::collections::HashMap;
-use clap::Clap;
 use byteorder::{LittleEndian, ReadBytesExt};
+use clap::Clap;
+use std::collections::HashMap;
 use std::sync::Arc;
 
-const MEMORY_SIZE: u32 = 1<<20; // 1MB
+const MEMORY_SIZE: u32 = 1 << 20; // 1MB
 
 // TODO
 // define_inst macro
@@ -54,19 +54,19 @@ impl Memory {
     }
     fn load_bin(&mut self, bin: &[u8]) {
         let n = bin.len();
-        let buf = &mut self.v[0 .. n];
+        let buf = &mut self.v[0..n];
         buf.copy_from_slice(&bin)
     }
     fn read_u8(&self, i: u32) -> u8 {
-        let mut buf = &self.v[i as usize ..];
+        let mut buf = &self.v[i as usize..];
         buf.read_u8().unwrap()
     }
     fn read_i8(&self, i: u32) -> i8 {
-        let mut buf = &self.v[i as usize ..];
+        let mut buf = &self.v[i as usize..];
         buf.read_i8().unwrap()
     }
     fn read_u32(&self, i: u32) -> u32 {
-        let mut buf = &self.v[i as usize ..];
+        let mut buf = &self.v[i as usize..];
         buf.read_u32::<LittleEndian>().unwrap()
     }
 }
@@ -76,7 +76,7 @@ struct Emulator {
     eip: u32,
 
     mem: Memory,
-    
+
     // code -> inst
     insts: HashMap<u8, Arc<dyn Instruction>>,
 }
