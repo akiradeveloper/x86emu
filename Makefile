@@ -1,4 +1,5 @@
-build:
+.PHONY: build
+build: 
 	nasm main.asm
 
 run: build
