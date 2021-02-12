@@ -32,6 +32,19 @@ impl Instruction for short_jump {
         }
     }
 }
+struct near_jump;
+impl Instruction for near_jump {
+    fn exec(&self, emu: &mut Emulator) {
+        let diff: i32 = emu.mem.read_i32(emu.eip + 1);
+        let d = diff + 5;
+        dbg!(d);
+        if d >= 0 {
+            emu.eip += d as u32;
+        } else {
+            emu.eip -= (-d) as u32;
+        }
+    }
+}
 enum REG {
     EAX,
     ECX,
@@ -54,7 +67,7 @@ impl Memory {
     }
     fn load_bin(&mut self, bin: &[u8]) {
         let n = bin.len();
-        let buf = &mut self.v[0..n];
+        let buf = &mut self.v[0x7c00 .. 0x7c00+n];
         buf.copy_from_slice(&bin)
     }
     fn read_u8(&self, i: u32) -> u8 {
@@ -68,6 +81,10 @@ impl Memory {
     fn read_u32(&self, i: u32) -> u32 {
         let mut buf = &self.v[i as usize..];
         buf.read_u32::<LittleEndian>().unwrap()
+    }
+    fn read_i32(&self, i: u32) -> i32 {
+        let mut buf = &self.v[i as usize..];
+        buf.read_i32::<LittleEndian>().unwrap()
     }
 }
 struct Emulator {
@@ -86,6 +103,7 @@ impl Emulator {
         for i in 0..8 {
             insts.insert(0xB8 + i, Arc::new(mov_r32_imm32));
         }
+        insts.insert(0xE9, Arc::new(near_jump));
         insts.insert(0xEB, Arc::new(short_jump));
 
         let mut x = Emulator {
@@ -126,7 +144,7 @@ struct Opts {
 fn main() {
     let opts = Opts::parse();
 
-    let mut emu = Emulator::new(MEMORY_SIZE, 0x0000, 0x7c00);
+    let mut emu = Emulator::new(MEMORY_SIZE, 0x7c00, 0x7c00);
 
     let bin = std::fs::read(opts.bin_file).expect("failed to read program");
     emu.mem.load_bin(&bin);
