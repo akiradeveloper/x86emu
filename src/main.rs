@@ -5,6 +5,24 @@ use std::sync::Arc;
 
 const MEMORY_SIZE: u32 = 1 << 20; // 1MB
 
+enum Disp {
+   i8(i8),
+   u32(u32)
+}
+
+struct ModRM {
+    mo: u8,
+    reg: u8,
+    rm: u8,
+    sib: u8,
+    disp: Disp,
+}
+impl ModRM {
+    fn parse(emu: &mut Emulator) -> ModRM {
+        unimplemented!()
+    }
+}
+
 // TODO
 // define_inst macro
 trait Instruction {
