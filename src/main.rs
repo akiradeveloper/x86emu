@@ -65,9 +65,9 @@ impl Memory {
             v: vec![0; sz as usize],
         }
     }
-    fn load_bin(&mut self, bin: &[u8]) {
+    fn load_bin(&mut self, bin: &[u8], at: usize) {
         let n = bin.len();
-        let buf = &mut self.v[0x7c00 .. 0x7c00+n];
+        let buf = &mut self.v[at..at + n];
         buf.copy_from_slice(&bin)
     }
     fn read_u8(&self, i: u32) -> u8 {
@@ -147,7 +147,7 @@ fn main() {
     let mut emu = Emulator::new(MEMORY_SIZE, 0x7c00, 0x7c00);
 
     let bin = std::fs::read(opts.bin_file).expect("failed to read program");
-    emu.mem.load_bin(&bin);
+    emu.mem.load_bin(&bin, 0x7c00);
 
     emu.exec();
 }
