@@ -200,9 +200,9 @@ define_inst!(mov_r32_rm32, emu, {
 define_inst!(add_rm32_r32, emu, {
     emu.eip += 1;
     let modrm = ModRM::parse(emu);
-    let a = emu.read_reg(modrm.re as usize);
-    let b = modrm.read_u32(emu);
-    let c = a + b;
+    let a = modrm.read_u32(emu);
+    let b = emu.read_reg(modrm.re as usize);
+    let c = a+b;
     modrm.write_u32(c, emu);
 });
 define_inst!(code_83, emu, {
@@ -210,6 +210,7 @@ define_inst!(code_83, emu, {
     let modrm = ModRM::parse(emu);
     match modrm.re {
         5 => {
+            // sum_rm32_imm8
             let a = modrm.read_u32(emu);
             let b = emu.mem.read_i8(emu.eip);
             emu.eip += 1;
@@ -223,8 +224,19 @@ define_inst!(code_83, emu, {
         _ => unreachable!()
     }
 });
-define_inst!(inc_rm32, emu, {
-
+define_inst!(code_ff, emu, {
+    emu.eip += 1;
+    let modrm = ModRM::parse(emu);
+    match modrm.re {
+        0 => {
+            // inc_rm32
+            let a = modrm.read_u32(emu);
+            modrm.write_u32(a+1, emu);
+        },
+        _ => {
+            unimplemented!()
+        },
+    }
 });
 enum REG {
     EAX,
@@ -285,11 +297,18 @@ struct Emulator {
 impl Emulator {
     fn new(mem_size: u32, eip: u32, esp: u32) -> Self {
         let mut insts: HashMap<u8, Arc<dyn Instruction>> = HashMap::new();
+        
+        insts.insert(0x01, Arc::new(add_rm32_r32));
+        insts.insert(0x83, Arc::new(code_83));
+        insts.insert(0x89, Arc::new(mov_rm32_r32));
+        insts.insert(0x8B, Arc::new(mov_r32_rm32));
         for i in 0..8 {
             insts.insert(0xB8 + i, Arc::new(mov_r32_imm32));
         }
+        insts.insert(0xC7, Arc::new(mov_rm32_imm32));
         insts.insert(0xE9, Arc::new(near_jump));
         insts.insert(0xEB, Arc::new(short_jump));
+        insts.insert(0xFF, Arc::new(code_ff));
 
         let mut x = Emulator {
             regs: vec![0; REG::COUNT as usize],
