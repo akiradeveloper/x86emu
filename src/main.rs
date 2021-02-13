@@ -1,4 +1,4 @@
-use byteorder::{LittleEndian, ReadBytesExt};
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use clap::Clap;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -8,17 +8,21 @@ const MEMORY_SIZE: u32 = 1 << 20; // 1MB
 enum Disp {
     None,
     i8(i8),
-    i32(i32)
+    i32(i32),
 }
 struct ModRM {
-    mo: u8, re: u8, rm: u8,
+    mo: u8,
+    re: u8,
+    rm: u8,
     sib: Option<u8>,
     disp: Disp,
 }
 impl ModRM {
     fn parse(emu: &mut Emulator) -> ModRM {
         let mut x = ModRM {
-            mo: 0, re: 0, rm: 0,
+            mo: 0,
+            re: 0,
+            rm: 0,
             sib: None,
             disp: Disp::None,
         };
@@ -44,48 +48,149 @@ impl ModRM {
 
         x
     }
+    fn calc_memory_address(&self, emu: &Emulator) -> u32 {
+        match self.mo {
+            0b00 => {
+                match self.rm {
+                    0b100 => {
+                        unimplemented!()
+                    }
+                    0b101 => {
+                        // disp32
+                        if let Disp::i32(x) = self.disp {
+                            x as u32
+                        } else {
+                            unreachable!()
+                        }
+                    }
+                    _ => {
+                        // [eax]
+                        emu.read_reg(self.rm as usize)
+                    }
+                }
+            }
+            0b01 => {
+                match self.rm {
+                    0b100 => {
+                        unimplemented!()
+                    }
+                    _ => {
+                        // [eax] + disp8
+                        if let Disp::i8(x) = self.disp {
+                            let base = emu.read_reg(self.rm as usize);
+                            if x >= 0 {
+                                base + x as u32
+                            } else {
+                                base - (-x) as u32
+                            }
+                        } else {
+                            unreachable!()
+                        }
+                    }
+                }
+            }
+            0b10 => {
+                match self.rm {
+                    0b100 => {
+                        unimplemented!()
+                    }
+                    _ => {
+                        // [eax] + disp32
+                        if let Disp::i32(x) = self.disp {
+                            let base = emu.read_reg(self.rm as usize);
+                            if x >= 0 {
+                                base + x as u32
+                            } else {
+                                base - (-x) as u32
+                            }
+                        } else {
+                            unreachable!()
+                        }
+                    }
+                }
+            }
+            0b11 => {
+                unimplemented!()
+            }
+            _ => unreachable!(),
+        }
+    }
+    fn write_u32(&self, v: u32, emu: &mut Emulator) {
+        if self.mo == 0b11 {
+            // eax
+            emu.write_reg(self.rm as usize, v);
+        } else {
+            // [eax], [eax]+disp, disp
+            let addr = self.calc_memory_address(emu);
+            emu.mem.write_u32(addr, v);
+        }
+    }
+    fn read_u32(&self, emu: &mut Emulator) -> u32 {
+        if self.mo == 0b11 {
+            emu.read_reg(self.rm as usize)
+        } else {
+            let addr = self.calc_memory_address(emu);
+            emu.mem.read_u32(addr)
+        }
+    }
 }
 
-// TODO
-// define_inst macro
 trait Instruction {
     fn exec(&self, emu: &mut Emulator);
 }
-struct mov_r32_imm32;
-impl Instruction for mov_r32_imm32 {
-    fn exec(&self, emu: &mut Emulator) {
-        let k = emu.mem.read_u8(emu.eip) - 0xB8;
-        let v = emu.mem.read_u32(emu.eip + 1);
-        emu.regs[k as usize] = v;
-        emu.eip += 5;
-    }
-}
-struct short_jump;
-impl Instruction for short_jump {
-    fn exec(&self, emu: &mut Emulator) {
-        let diff: i8 = emu.mem.read_i8(emu.eip + 1);
-        let d = diff + 2;
-        dbg!(d);
-        if d >= 0 {
-            emu.eip += d as u32;
-        } else {
-            emu.eip -= (-d) as u32;
+macro_rules! define_inst {
+    ($name:ident, $emu:ident, $code:block) => {
+        struct $name;
+        impl Instruction for $name {
+            fn exec(&self, $emu: &mut Emulator) $code
         }
     }
 }
-struct near_jump;
-impl Instruction for near_jump {
-    fn exec(&self, emu: &mut Emulator) {
-        let diff: i32 = emu.mem.read_i32(emu.eip + 1);
-        let d = diff + 5;
-        dbg!(d);
-        if d >= 0 {
-            emu.eip += d as u32;
-        } else {
-            emu.eip -= (-d) as u32;
-        }
+define_inst!(mov_r32_imm32, emu, {
+    let k = emu.mem.read_u8(emu.eip) - 0xB8;
+    let v = emu.mem.read_u32(emu.eip + 1);
+    emu.regs[k as usize] = v;
+    emu.eip += 5;
+});
+define_inst!(short_jump, emu, {
+    let diff: i8 = emu.mem.read_i8(emu.eip + 1);
+    let d = diff + 2;
+    dbg!(d);
+    if d >= 0 {
+        emu.eip += d as u32;
+    } else {
+        emu.eip -= (-d) as u32;
     }
-}
+});
+define_inst!(near_jump, emu, {
+    let diff: i32 = emu.mem.read_i32(emu.eip + 1);
+    let d = diff + 5;
+    dbg!(d);
+    if d >= 0 {
+        emu.eip += d as u32;
+    } else {
+        emu.eip -= (-d) as u32;
+    }
+});
+define_inst!(mov_rm32_imm32, emu, {
+    emu.eip += 1;
+    let modrm = ModRM::parse(emu);
+    let v = emu.mem.read_u32(emu.eip);
+    emu.eip += 4;
+    modrm.write_u32(v, emu);
+});
+define_inst!(mov_rm32_r32, emu, {
+    emu.eip += 1;
+    let modrm = ModRM::parse(emu);
+    let v = emu.read_reg(modrm.re as usize);
+    modrm.write_u32(v, emu);
+});
+define_inst!(mov_r32_rm32, emu, {
+    emu.eip += 1;
+    let modrm = ModRM::parse(emu);
+    let v = modrm.read_u32(emu);
+    emu.write_reg(modrm.re as usize, v);
+});
 enum REG {
     EAX,
     ECX,
@@ -127,6 +232,10 @@ impl Memory {
         let mut buf = &self.v[i as usize..];
         buf.read_i32::<LittleEndian>().unwrap()
     }
+    fn write_u32(&mut self, i: u32, v: u32) {
+        let mut buf = &mut self.v[i as usize..];
+        buf.write_u32::<LittleEndian>(v).unwrap()
+    }
 }
 struct Emulator {
     regs: Vec<u32>,
@@ -156,6 +265,12 @@ impl Emulator {
         };
         x.regs[REG::ESP as usize] = esp;
         x
+    }
+    fn read_reg(&self, i: usize) -> u32 {
+        self.regs[i]
+    }
+    fn write_reg(&mut self, i: usize, v: u32) {
+        self.regs[i] = v;
     }
     fn exec(&mut self) {
         while self.eip < MEMORY_SIZE {
