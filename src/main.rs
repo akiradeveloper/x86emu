@@ -116,21 +116,27 @@ impl ModRM {
         }
     }
     fn write_u32(&self, v: u32, emu: &mut Emulator) {
-        if self.mo == 0b11 {
-            // eax
-            emu.write_reg(self.rm as usize, v);
-        } else {
-            // [eax], [eax]+disp, disp
-            let addr = self.calc_memory_address(emu);
-            emu.mem.write_u32(addr, v);
+        match self.mo {
+            0b11 => {
+                // eax
+                emu.write_reg(self.rm as usize, v);
+            },
+            _ => {
+                // [eax], [eax]+disp, disp
+                let addr = self.calc_memory_address(emu);
+                emu.mem.write_u32(addr, v);
+            }
         }
     }
     fn read_u32(&self, emu: &mut Emulator) -> u32 {
-        if self.mo == 0b11 {
-            emu.read_reg(self.rm as usize)
-        } else {
-            let addr = self.calc_memory_address(emu);
-            emu.mem.read_u32(addr)
+        match self.mo {
+            0b11 => {
+                emu.read_reg(self.rm as usize)
+            },
+            _ => {
+                let addr = self.calc_memory_address(emu);
+                emu.mem.read_u32(addr)
+            }
         }
     }
 }
@@ -190,6 +196,35 @@ define_inst!(mov_r32_rm32, emu, {
     let modrm = ModRM::parse(emu);
     let v = modrm.read_u32(emu);
     emu.write_reg(modrm.re as usize, v);
+});
+define_inst!(add_rm32_r32, emu, {
+    emu.eip += 1;
+    let modrm = ModRM::parse(emu);
+    let a = emu.read_reg(modrm.re as usize);
+    let b = modrm.read_u32(emu);
+    let c = a + b;
+    modrm.write_u32(c, emu);
+});
+define_inst!(code_83, emu, {
+    emu.eip += 1;
+    let modrm = ModRM::parse(emu);
+    match modrm.re {
+        5 => {
+            let a = modrm.read_u32(emu);
+            let b = emu.mem.read_i8(emu.eip);
+            emu.eip += 1;
+            let c = if b >= 0 {
+                a + b as u32
+            } else {
+                a - (-b) as u32
+            };
+            modrm.write_u32(c, emu);
+        },
+        _ => unreachable!()
+    }
+});
+define_inst!(inc_rm32, emu, {
+
 });
 enum REG {
     EAX,
