@@ -297,7 +297,7 @@ struct Emulator {
 impl Emulator {
     fn new(mem_size: u32, eip: u32, esp: u32) -> Self {
         let mut insts: HashMap<u8, Arc<dyn Instruction>> = HashMap::new();
-        
+
         insts.insert(0x01, Arc::new(add_rm32_r32));
         insts.insert(0x83, Arc::new(code_83));
         insts.insert(0x89, Arc::new(mov_rm32_r32));
@@ -342,6 +342,17 @@ impl Emulator {
 
             if self.eip == 0x00 {
                 eprintln!("end of program");
+
+                println!("EAX = {:X}", self.regs[REG::EAX as usize]);
+                println!("ECX = {:X}", self.regs[REG::ECX as usize]);
+                println!("EDX = {:X}", self.regs[REG::EDX as usize]);
+                println!("EBX = {:X}", self.regs[REG::EBX as usize]);
+                println!("ESP = {:X}", self.regs[REG::ESP as usize]);
+                println!("EBP = {:X}", self.regs[REG::EBP as usize]);
+                println!("ESI = {:X}", self.regs[REG::ESI as usize]);
+                println!("EDI = {:X}", self.regs[REG::EDI as usize]);
+                println!("EIP = {:X}", self.eip);
+
                 break;
             }
         }
