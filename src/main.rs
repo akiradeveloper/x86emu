@@ -6,20 +6,43 @@ use std::sync::Arc;
 const MEMORY_SIZE: u32 = 1 << 20; // 1MB
 
 enum Disp {
-   i8(i8),
-   u32(u32)
+    None,
+    i8(i8),
+    i32(i32)
 }
-
 struct ModRM {
-    mo: u8,
-    reg: u8,
-    rm: u8,
-    sib: u8,
+    mo: u8, re: u8, rm: u8,
+    sib: Option<u8>,
     disp: Disp,
 }
 impl ModRM {
     fn parse(emu: &mut Emulator) -> ModRM {
-        unimplemented!()
+        let mut x = ModRM {
+            mo: 0, re: 0, rm: 0,
+            sib: None,
+            disp: Disp::None,
+        };
+        let code = emu.mem.read_u8(emu.eip);
+        x.mo = (code & 0b11000000) >> 6;
+        x.re = (code & 0b00111000) >> 3;
+        x.rm = (code & 0b00000111);
+        emu.eip += 1;
+
+        if (x.mo != 0b11 && x.rm == 0b100) {
+            x.sib = Some(emu.mem.read_u8(emu.eip));
+            emu.eip += 1;
+        }
+
+        // Mod(00) & RM(101) is a special case of disp32 (See Table 3.6)
+        if x.mo == 0b10 || (x.mo == 0b00 && x.rm == 0b101) {
+            x.disp = Disp::i32(emu.mem.read_i32(emu.eip));
+            emu.eip += 4;
+        } else if x.mo == 0b01 {
+            x.disp = Disp::i8(emu.mem.read_i8(emu.eip));
+            emu.eip += 1;
+        }
+
+        x
     }
 }
 
