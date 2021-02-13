@@ -161,7 +161,6 @@ define_inst!(mov_r32_imm32, emu, {
 define_inst!(short_jump, emu, {
     let diff: i8 = emu.mem.read_i8(emu.eip + 1);
     let d = diff + 2;
-    dbg!(d);
     if d >= 0 {
         emu.eip += d as u32;
     } else {
@@ -171,7 +170,6 @@ define_inst!(short_jump, emu, {
 define_inst!(near_jump, emu, {
     let diff: i32 = emu.mem.read_i32(emu.eip + 1);
     let d = diff + 5;
-    dbg!(d);
     if d >= 0 {
         emu.eip += d as u32;
     } else {
@@ -215,9 +213,9 @@ define_inst!(code_83, emu, {
             let b = emu.mem.read_i8(emu.eip);
             emu.eip += 1;
             let c = if b >= 0 {
-                a + b as u32
+                a - b as u32
             } else {
-                a - (-b) as u32
+                a + (-b) as u32
             };
             modrm.write_u32(c, emu);
         },
@@ -326,9 +324,24 @@ impl Emulator {
     fn write_reg(&mut self, i: usize, v: u32) {
         self.regs[i] = v;
     }
+    fn print_registers(&self) {
+        println!("EAX = {:X}", self.regs[REG::EAX as usize]);
+        println!("ECX = {:X}", self.regs[REG::ECX as usize]);
+        println!("EDX = {:X}", self.regs[REG::EDX as usize]);
+        println!("EBX = {:X}", self.regs[REG::EBX as usize]);
+        println!("ESP = {:X}", self.regs[REG::ESP as usize]);
+        println!("EBP = {:X}", self.regs[REG::EBP as usize]);
+        println!("ESI = {:X}", self.regs[REG::ESI as usize]);
+        println!("EDI = {:X}", self.regs[REG::EDI as usize]);
+        println!("EIP = {:X}", self.eip);
+    }
     fn exec(&mut self) {
+        let mut step = 0;
         while self.eip < MEMORY_SIZE {
-            eprintln!("eip: {}", self.eip);
+            step += 1;
+            println!("-------");
+            println!("STEP {}", step);
+            self.print_registers();
 
             let opcode = self.mem.read_u8(self.eip);
             if let Some(inst) = self.insts.get(&opcode) {
@@ -342,17 +355,7 @@ impl Emulator {
 
             if self.eip == 0x00 {
                 eprintln!("end of program");
-
-                println!("EAX = {:X}", self.regs[REG::EAX as usize]);
-                println!("ECX = {:X}", self.regs[REG::ECX as usize]);
-                println!("EDX = {:X}", self.regs[REG::EDX as usize]);
-                println!("EBX = {:X}", self.regs[REG::EBX as usize]);
-                println!("ESP = {:X}", self.regs[REG::ESP as usize]);
-                println!("EBP = {:X}", self.regs[REG::EBP as usize]);
-                println!("ESI = {:X}", self.regs[REG::ESI as usize]);
-                println!("EDI = {:X}", self.regs[REG::EDI as usize]);
-                println!("EIP = {:X}", self.eip);
-
+                self.print_registers();
                 break;
             }
         }

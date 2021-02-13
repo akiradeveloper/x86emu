@@ -5,7 +5,7 @@ start:
     mov ebp, esp
     mov eax, 2
     mov dword [ebp+4], 5
-    mov dword [ebp+4], eax
+    add dword [ebp+4], eax
     mov esi, [ebp+4]
     inc dword [ebp+4]
     mov edi, [ebp+4]
