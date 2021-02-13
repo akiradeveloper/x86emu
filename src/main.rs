@@ -325,22 +325,22 @@ impl Emulator {
         self.regs[i] = v;
     }
     fn print_registers(&self) {
-        println!("EAX = {:X}", self.regs[REG::EAX as usize]);
-        println!("ECX = {:X}", self.regs[REG::ECX as usize]);
-        println!("EDX = {:X}", self.regs[REG::EDX as usize]);
-        println!("EBX = {:X}", self.regs[REG::EBX as usize]);
-        println!("ESP = {:X}", self.regs[REG::ESP as usize]);
-        println!("EBP = {:X}", self.regs[REG::EBP as usize]);
-        println!("ESI = {:X}", self.regs[REG::ESI as usize]);
-        println!("EDI = {:X}", self.regs[REG::EDI as usize]);
-        println!("EIP = {:X}", self.eip);
+        eprintln!("EAX = {:X}", self.regs[REG::EAX as usize]);
+        eprintln!("ECX = {:X}", self.regs[REG::ECX as usize]);
+        eprintln!("EDX = {:X}", self.regs[REG::EDX as usize]);
+        eprintln!("EBX = {:X}", self.regs[REG::EBX as usize]);
+        eprintln!("ESP = {:X}", self.regs[REG::ESP as usize]);
+        eprintln!("EBP = {:X}", self.regs[REG::EBP as usize]);
+        eprintln!("ESI = {:X}", self.regs[REG::ESI as usize]);
+        eprintln!("EDI = {:X}", self.regs[REG::EDI as usize]);
+        eprintln!("EIP = {:X}", self.eip);
     }
     fn exec(&mut self) {
         let mut step = 0;
         while self.eip < MEMORY_SIZE {
             step += 1;
-            println!("-------");
-            println!("STEP {}", step);
+            eprintln!("----------");
+            eprintln!("STEP {}", step);
             self.print_registers();
 
             let opcode = self.mem.read_u8(self.eip);
@@ -354,7 +354,8 @@ impl Emulator {
             }
 
             if self.eip == 0x00 {
-                eprintln!("end of program");
+                eprintln!("----------");
+                eprintln!("END");
                 self.print_registers();
                 break;
             }
