@@ -336,7 +336,7 @@ impl Emulator {
                 let inst = Arc::clone(&inst);
                 inst.exec(self);
             } else {
-                eprintln!("op({}) not implemented", opcode);
+                eprintln!("op({:X}) not implemented", opcode);
                 break;
             }
 
