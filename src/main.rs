@@ -120,7 +120,7 @@ impl ModRM {
             0b11 => {
                 // eax
                 emu.write_reg(self.rm as usize, v);
-            },
+            }
             _ => {
                 // [eax], [eax]+disp, disp
                 let addr = self.calc_memory_address(emu);
@@ -130,9 +130,7 @@ impl ModRM {
     }
     fn read_u32(&self, emu: &mut Emulator) -> u32 {
         match self.mo {
-            0b11 => {
-                emu.read_reg(self.rm as usize)
-            },
+            0b11 => emu.read_reg(self.rm as usize),
             _ => {
                 let addr = self.calc_memory_address(emu);
                 emu.mem.read_u32(addr)
@@ -200,7 +198,7 @@ define_inst!(add_rm32_r32, emu, {
     let modrm = ModRM::parse(emu);
     let a = modrm.read_u32(emu);
     let b = emu.read_reg(modrm.re as usize);
-    let c = a+b;
+    let c = a + b;
     modrm.write_u32(c, emu);
 });
 define_inst!(code_83, emu, {
@@ -218,8 +216,8 @@ define_inst!(code_83, emu, {
                 a + (-b) as u32
             };
             modrm.write_u32(c, emu);
-        },
-        _ => unreachable!()
+        }
+        _ => unreachable!(),
     }
 });
 define_inst!(code_ff, emu, {
@@ -229,11 +227,11 @@ define_inst!(code_ff, emu, {
         0 => {
             // inc_rm32
             let a = modrm.read_u32(emu);
-            modrm.write_u32(a+1, emu);
-        },
+            modrm.write_u32(a + 1, emu);
+        }
         _ => {
             unimplemented!()
-        },
+        }
     }
 });
 enum REG {
