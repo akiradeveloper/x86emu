@@ -234,6 +234,32 @@ define_inst!(code_ff, emu, {
         }
     }
 });
+define_inst!(push_r32, emu, {
+    let reg = emu.mem.read_u8(emu.eip) - 0x50;
+    let v = emu.read_reg(reg as usize);
+    emu.push(v);
+    emu.eip += 1;
+});
+define_inst!(pop_r32, emu, {
+    let reg = emu.mem.read_u8(emu.eip) - 0x58;
+    let v = emu.pop();
+    emu.write_reg(reg as usize, v);
+    emu.eip += 1;
+});
+define_inst!(call_rel32, emu, {
+    let diff = emu.mem.read_i32(emu.eip + 1);
+    // Push the address after call
+    emu.push(emu.eip + 5);
+    let d = diff + 5;
+    if d >= 0 {
+        emu.eip += d as u32;
+    } else {
+        emu.eip -= (-d) as u32;
+    }
+});
+define_inst!(ret, emu, {
+    emu.eip = emu.pop();
+});
 enum REG {
     EAX,
     ECX,
@@ -295,13 +321,21 @@ impl Emulator {
         let mut insts: HashMap<u8, Arc<dyn Instruction>> = HashMap::new();
 
         insts.insert(0x01, Arc::new(add_rm32_r32));
+        for i in 0..8 {
+            insts.insert(0x50 + i, Arc::new(push_r32));
+        }
+        for i in 0..8 {
+            insts.insert(0x58 + i, Arc::new(pop_r32));
+        }
         insts.insert(0x83, Arc::new(code_83));
         insts.insert(0x89, Arc::new(mov_rm32_r32));
         insts.insert(0x8B, Arc::new(mov_r32_rm32));
         for i in 0..8 {
             insts.insert(0xB8 + i, Arc::new(mov_r32_imm32));
         }
+        insts.insert(0xC3, Arc::new(ret));
         insts.insert(0xC7, Arc::new(mov_rm32_imm32));
+        insts.insert(0xE8, Arc::new(call_rel32));
         insts.insert(0xE9, Arc::new(near_jump));
         insts.insert(0xEB, Arc::new(short_jump));
         insts.insert(0xFF, Arc::new(code_ff));
@@ -321,6 +355,17 @@ impl Emulator {
     }
     fn write_reg(&mut self, i: usize, v: u32) {
         self.regs[i] = v;
+    }
+    fn push(&mut self, v: u32) {
+        let new_esp = self.read_reg(REG::ESP as usize) - 4;
+        self.write_reg(REG::ESP as usize, new_esp);
+        self.mem.write_u32(new_esp, v);
+    }
+    fn pop(&mut self) -> u32 {
+        let cur_esp = self.read_reg(REG::ESP as usize);
+        let v = self.mem.read_u32(cur_esp);
+        self.write_reg(REG::ESP as usize, cur_esp + 4);
+        v
     }
     fn print_registers(&self) {
         eprintln!("EAX = {:X}", self.regs[REG::EAX as usize]);
