@@ -1,4 +1,4 @@
-from 'ubuntu:21.04'
+from 'debian:buster'
 WORKDIR '/x86emu'
 
 RUN apt-get update
