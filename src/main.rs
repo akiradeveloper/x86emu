@@ -52,9 +52,7 @@ impl ModRM {
         match self.mo {
             0b00 => {
                 match self.rm {
-                    0b100 => {
-                        unimplemented!()
-                    }
+                    0b100 => unimplemented!(),
                     0b101 => {
                         // disp32
                         if let Disp::i32(x) = self.disp {
@@ -71,9 +69,7 @@ impl ModRM {
             }
             0b01 => {
                 match self.rm {
-                    0b100 => {
-                        unimplemented!()
-                    }
+                    0b100 => unimplemented!(),
                     _ => {
                         // [eax] + disp8
                         if let Disp::i8(x) = self.disp {
@@ -91,9 +87,7 @@ impl ModRM {
             }
             0b10 => {
                 match self.rm {
-                    0b100 => {
-                        unimplemented!()
-                    }
+                    0b100 => unimplemented!(),
                     _ => {
                         // [eax] + disp32
                         if let Disp::i32(x) = self.disp {
@@ -109,9 +103,7 @@ impl ModRM {
                     }
                 }
             }
-            0b11 => {
-                unimplemented!()
-            }
+            0b11 => unimplemented!(),
             _ => unreachable!(),
         }
     }
@@ -229,9 +221,7 @@ define_inst!(code_ff, emu, {
             let a = modrm.read_u32(emu);
             modrm.write_u32(a + 1, emu);
         }
-        _ => {
-            unimplemented!()
-        }
+        _ => unimplemented!(),
     }
 });
 define_inst!(push_r32, emu, {
