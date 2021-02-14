@@ -247,9 +247,6 @@ define_inst!(call_rel32, emu, {
         emu.eip -= (-d) as u32;
     }
 });
-define_inst!(ret, emu, {
-    emu.eip = emu.pop();
-});
 define_inst!(leave, emu, {
     // mov esp, ebp
     let ebp = emu.read_reg(REG::EBP as usize);
@@ -258,6 +255,9 @@ define_inst!(leave, emu, {
     let v = emu.pop();
     emu.write_reg(REG::EBP as usize, v);
     emu.eip += 1;
+});
+define_inst!(ret, emu, {
+    emu.eip = emu.pop();
 });
 enum REG {
     EAX,
