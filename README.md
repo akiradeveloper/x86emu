@@ -6,6 +6,9 @@ This is a hobby program based on
 
 but in Rust.
 
-## Requirements
+## How to run?
 
-- nasm
+Don't worry. Docker is your friend.
+
+1. make docker-build
+2. ./dev

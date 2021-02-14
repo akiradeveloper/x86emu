@@ -52,9 +52,7 @@ impl ModRM {
         match self.mo {
             0b00 => {
                 match self.rm {
-                    0b100 => {
-                        unimplemented!()
-                    }
+                    0b100 => unimplemented!(),
                     0b101 => {
                         // disp32
                         if let Disp::i32(x) = self.disp {
@@ -71,9 +69,7 @@ impl ModRM {
             }
             0b01 => {
                 match self.rm {
-                    0b100 => {
-                        unimplemented!()
-                    }
+                    0b100 => unimplemented!(),
                     _ => {
                         // [eax] + disp8
                         if let Disp::i8(x) = self.disp {
@@ -91,9 +87,7 @@ impl ModRM {
             }
             0b10 => {
                 match self.rm {
-                    0b100 => {
-                        unimplemented!()
-                    }
+                    0b100 => unimplemented!(),
                     _ => {
                         // [eax] + disp32
                         if let Disp::i32(x) = self.disp {
@@ -109,9 +103,7 @@ impl ModRM {
                     }
                 }
             }
-            0b11 => {
-                unimplemented!()
-            }
+            0b11 => unimplemented!(),
             _ => unreachable!(),
         }
     }
@@ -229,9 +221,7 @@ define_inst!(code_ff, emu, {
             let a = modrm.read_u32(emu);
             modrm.write_u32(a + 1, emu);
         }
-        _ => {
-            unimplemented!()
-        }
+        _ => unimplemented!(),
     }
 });
 define_inst!(push_r32, emu, {
@@ -256,6 +246,15 @@ define_inst!(call_rel32, emu, {
     } else {
         emu.eip -= (-d) as u32;
     }
+});
+define_inst!(leave, emu, {
+    // mov esp, ebp
+    let ebp = emu.read_reg(REG::EBP as usize);
+    emu.write_reg(REG::ESP as usize, ebp);
+    // pop ebp
+    let v = emu.pop();
+    emu.write_reg(REG::EBP as usize, v);
+    emu.eip += 1;
 });
 define_inst!(ret, emu, {
     emu.eip = emu.pop();
@@ -335,6 +334,7 @@ impl Emulator {
         }
         insts.insert(0xC3, Arc::new(ret));
         insts.insert(0xC7, Arc::new(mov_rm32_imm32));
+        insts.insert(0xC9, Arc::new(leave));
         insts.insert(0xE8, Arc::new(call_rel32));
         insts.insert(0xE9, Arc::new(near_jump));
         insts.insert(0xEB, Arc::new(short_jump));
