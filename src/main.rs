@@ -260,6 +260,15 @@ define_inst!(call_rel32, emu, {
 define_inst!(ret, emu, {
     emu.eip = emu.pop();
 });
+define_inst!(leave, emu, {
+    // mov esp, ebp
+    let ebp = emu.read_reg(REG::EBP as usize);
+    emu.write_reg(REG::ESP as usize, ebp);
+    // pop ebp
+    let v = emu.pop();
+    emu.write_reg(REG::EBP as usize, v);
+    emu.eip += 1;
+});
 enum REG {
     EAX,
     ECX,
@@ -335,6 +344,7 @@ impl Emulator {
         }
         insts.insert(0xC3, Arc::new(ret));
         insts.insert(0xC7, Arc::new(mov_rm32_imm32));
+        insts.insert(0xC9, Arc::new(leave));
         insts.insert(0xE8, Arc::new(call_rel32));
         insts.insert(0xE9, Arc::new(near_jump));
         insts.insert(0xEB, Arc::new(short_jump));
