@@ -1,6 +1,6 @@
 version: '2'
 services:
-  cov:
+  dev:
     image: akiradeveloper:x86emu
     volumes:
       - .:/x86emu

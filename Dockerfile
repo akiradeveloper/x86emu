@@ -2,6 +2,7 @@ from 'ubuntu:21.04'
 WORKDIR '/x86emu'
 
 RUN apt-get update
+RUN apt-get install -y build-essential
 RUN apt-get install -y nasm
 
 ARG USER
