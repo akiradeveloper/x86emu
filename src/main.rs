@@ -246,6 +246,20 @@ define_inst!(pop_r32, emu, {
     emu.write_reg(reg as usize, v);
     emu.eip += 1;
 });
+define_inst!(call_rel32, emu, {
+    let diff = emu.mem.read_i32(emu.eip + 1);
+    // Push the address after call
+    emu.push(emu.eip + 5);
+    let d = diff + 5;
+    if d >= 0 {
+        emu.eip += d as u32;
+    } else {
+        emu.eip -= (-d) as u32;
+    }
+});
+define_inst!(ret, emu, {
+    emu.eip = emu.pop();
+});
 enum REG {
     EAX,
     ECX,
@@ -307,13 +321,21 @@ impl Emulator {
         let mut insts: HashMap<u8, Arc<dyn Instruction>> = HashMap::new();
 
         insts.insert(0x01, Arc::new(add_rm32_r32));
+        for i in 0..8 {
+            insts.insert(0x50 + i, Arc::new(push_r32));
+        }
+        for i in 0..8 {
+            insts.insert(0x58 + i, Arc::new(pop_r32));
+        }
         insts.insert(0x83, Arc::new(code_83));
         insts.insert(0x89, Arc::new(mov_rm32_r32));
         insts.insert(0x8B, Arc::new(mov_r32_rm32));
         for i in 0..8 {
             insts.insert(0xB8 + i, Arc::new(mov_r32_imm32));
         }
+        insts.insert(0xC3, Arc::new(ret));
         insts.insert(0xC7, Arc::new(mov_rm32_imm32));
+        insts.insert(0xE8, Arc::new(call_rel32));
         insts.insert(0xE9, Arc::new(near_jump));
         insts.insert(0xEB, Arc::new(short_jump));
         insts.insert(0xFF, Arc::new(code_ff));
