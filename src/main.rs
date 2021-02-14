@@ -234,6 +234,18 @@ define_inst!(code_ff, emu, {
         }
     }
 });
+define_inst!(push_r32, emu, {
+    let reg = emu.mem.read_u8(emu.eip) - 0x50;
+    let v = emu.read_reg(reg as usize);
+    emu.push(v);
+    emu.eip += 1;
+});
+define_inst!(pop_r32, emu, {
+    let reg = emu.mem.read_u8(emu.eip) - 0x58;
+    let v = emu.pop();
+    emu.write_reg(reg as usize, v);
+    emu.eip += 1;
+});
 enum REG {
     EAX,
     ECX,
@@ -321,6 +333,17 @@ impl Emulator {
     }
     fn write_reg(&mut self, i: usize, v: u32) {
         self.regs[i] = v;
+    }
+    fn push(&mut self, v: u32) {
+        let new_esp = self.read_reg(REG::ESP as usize) - 4;
+        self.write_reg(REG::ESP as usize, new_esp);
+        self.mem.write_u32(new_esp, v);
+    }
+    fn pop(&mut self) -> u32 {
+        let cur_esp = self.read_reg(REG::ESP as usize);
+        let v = self.mem.read_u32(cur_esp);
+        self.write_reg(REG::ESP as usize, cur_esp + 4);
+        v
     }
     fn print_registers(&self) {
         eprintln!("EAX = {:X}", self.regs[REG::EAX as usize]);
