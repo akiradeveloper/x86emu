@@ -348,6 +348,7 @@ impl Emulator {
         for i in 0..8 {
             insts.insert(0x58 + i, Arc::new(pop_r32));
         }
+        insts.insert(0x68, Arc::new(push_imm32));
         insts.insert(0x6a, Arc::new(push_imm8));
         insts.insert(0x83, Arc::new(code_83));
         insts.insert(0x89, Arc::new(mov_rm32_r32));
