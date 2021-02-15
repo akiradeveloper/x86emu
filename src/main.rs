@@ -197,8 +197,20 @@ define_inst!(code_83, emu, {
     emu.eip += 1;
     let modrm = ModRM::parse(emu);
     match modrm.re {
+        0 => {
+            // add_rm32_imm8
+            let a = modrm.read_u32(emu);
+            let b = emu.mem.read_i8(emu.eip);
+            emu.eip += 1;
+            let c = if b >= 0 {
+                a + b as u32
+            } else {
+                a - (-b) as u32
+            };
+            modrm.write_u32(c, emu);
+        }
         5 => {
-            // sum_rm32_imm8
+            // sub_rm32_imm8
             let a = modrm.read_u32(emu);
             let b = emu.mem.read_i8(emu.eip);
             emu.eip += 1;
@@ -223,6 +235,16 @@ define_inst!(code_ff, emu, {
         }
         _ => unimplemented!(),
     }
+});
+define_inst!(push_imm8, emu, {
+    let v = emu.mem.read_u8(emu.eip + 1);
+    emu.push(v as u32);
+    emu.eip += 2;
+});
+define_inst!(push_imm32, emu, {
+    let v = emu.mem.read_u32(emu.eip + 1);
+    emu.push(v);
+    emu.eip += 5;
 });
 define_inst!(push_r32, emu, {
     let reg = emu.mem.read_u8(emu.eip) - 0x50;
@@ -326,6 +348,8 @@ impl Emulator {
         for i in 0..8 {
             insts.insert(0x58 + i, Arc::new(pop_r32));
         }
+        insts.insert(0x68, Arc::new(push_imm32));
+        insts.insert(0x6a, Arc::new(push_imm8));
         insts.insert(0x83, Arc::new(code_83));
         insts.insert(0x89, Arc::new(mov_rm32_r32));
         insts.insert(0x8B, Arc::new(mov_r32_rm32));
