@@ -208,7 +208,7 @@ define_inst!(code_83, emu, {
                 a - (-b) as u32
             };
             modrm.write_u32(c, emu);
-        },
+        }
         5 => {
             // sub_rm32_imm8
             let a = modrm.read_u32(emu);
