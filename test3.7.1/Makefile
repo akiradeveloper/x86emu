@@ -3,7 +3,7 @@ build:
 	nasm main.asm
 
 dump: build
-	objdump -m i386 -b binary -D main
+	objdump -M intel -m i386 -b binary -D main
 
 run: build
 	cargo run main

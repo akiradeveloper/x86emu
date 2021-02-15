@@ -6,7 +6,7 @@ build:
 	ld -m elf_i386 -s --entry=start --oformat=binary -Ttext 0x7c00 -o main crt0.o test.o
 
 dump: build
-	objdump -m i386 -b binary -D main
+	objdump -M intel -m i386 -b binary -D main
 
 run: build
 	cargo run main
