@@ -192,6 +192,15 @@ define_inst!(add_rm32_r32, emu, {
     let b = emu.read_reg(modrm.re as usize);
     let c = a + b;
     modrm.write_u32(c, emu);
+    // TODO eflags
+});
+define_inst!(cmp_r32_rm32, emu, {
+    emu.eip += 1;
+    let modrm = ModRM::parse(emu);
+    let a = emu.read_reg(modrm.re as usize);
+    let b = modrm.read_u32(emu);
+    let c = a as u64 - b as u64;
+    update_eflags(&mut emu.eflags, a, b, c);
 });
 define_inst!(code_83, emu, {
     emu.eip += 1;
@@ -200,26 +209,28 @@ define_inst!(code_83, emu, {
         0 => {
             // add_rm32_imm8
             let a = modrm.read_u32(emu);
-            let b = emu.mem.read_i8(emu.eip);
+            let b = emu.mem.read_i8(emu.eip) as u32;
             emu.eip += 1;
-            let c = if b >= 0 {
-                a + b as u32
-            } else {
-                a - (-b) as u32
-            };
-            modrm.write_u32(c, emu);
+            let c = a as i32 + b as i32;
+            modrm.write_u32(c as u32, emu);
+            update_eflags(&mut emu.eflags, a, b, c);
         }
         5 => {
             // sub_rm32_imm8
             let a = modrm.read_u32(emu);
-            let b = emu.mem.read_i8(emu.eip);
+            let b = emu.mem.read_i8(emu.eip) as u32;
             emu.eip += 1;
-            let c = if b >= 0 {
-                a - b as u32
-            } else {
-                a + (-b) as u32
-            };
+            let c = a as i64 - b as i64;
             modrm.write_u32(c, emu);
+            update_eflags(&mut emu.eflags, a, b, c);
+        }
+        7 => {
+            // cmp_rm32_imm8
+            let a = modrm.read_u32(emu);
+            let b = emu.mem.read_i8(emu.eip) as u32;
+            emu.eip += 1;
+            let c = a as u64 - b as u64;
+            update_eflags(&mut emu.eflags, a, b, c);
         }
         _ => unreachable!(),
     }
@@ -325,6 +336,49 @@ impl Memory {
     fn write_u32(&mut self, i: u32, v: u32) {
         let mut buf = &mut self.v[i as usize..];
         buf.write_u32::<LittleEndian>(v).unwrap()
+    }
+}
+enum EFLAGS_SHIFT {
+    CARRY = 1,
+    ZERO = 6,
+    SIGN = 7,
+    OVERFLOW = 11,
+}
+fn set(eflags: &mut u32, shift: u32) {
+    *eflags |= (1<<shift)
+}
+fn unset(eflags: &mut u32, shift: u32) {
+    *eflags &= !(1<<shift)
+}
+fn update_eflags(out: &mut u32, x: u32, y: u32, z: u64) {
+    use EFLAGS_SHIFT::*;
+
+    let sign_x = x >> 31 > 0;
+    let sign_y = y >> 31 > 0 ;
+    let sign_z = (z >> 31) & 1 > 0;
+
+    if z>>32 > 0 {
+        set(out, CARRY as u32);
+    } else {
+        unset(out, CARRY as u32);
+    }
+
+    if z == 0 {
+        set(out, ZERO as u32);
+    } else {
+        unset(out, ZERO as u32);
+    }
+
+    if sign_z {
+        set(out, SIGN as u32);
+    } else {
+        unset(out, SIGN as u32);
+    }
+
+    if sign_x != sign_y && sign_x != sign_z {
+        set(out, OVERFLOW as u32);
+    } else {
+        unset(out, OVERFLOW as u32);
     }
 }
 struct Emulator {
