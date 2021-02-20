@@ -1,8 +1,8 @@
-int abs(int i) {
-    if (i>=0) {
-        return i;
+int abs(int x) {
+    if (x >= 0) {
+        return x;
     } else {
-        return -i;
+        return -x;
     }
 }
 int main(void) {
