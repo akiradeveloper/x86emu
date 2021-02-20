@@ -211,9 +211,9 @@ define_inst!(code_83, emu, {
             let a = modrm.read_u32(emu);
             let b = emu.mem.read_i8(emu.eip) as u32;
             emu.eip += 1;
-            let c = a as i32 + b as i32;
+            let c = a as i64 + b as i64;
             modrm.write_u32(c as u32, emu);
-            update_eflags(&mut emu.eflags, a, b, c);
+            update_eflags(&mut emu.eflags, a, b, c as u64);
         }
         5 => {
             // sub_rm32_imm8
@@ -221,16 +221,16 @@ define_inst!(code_83, emu, {
             let b = emu.mem.read_i8(emu.eip) as u32;
             emu.eip += 1;
             let c = a as i64 - b as i64;
-            modrm.write_u32(c, emu);
-            update_eflags(&mut emu.eflags, a, b, c);
+            modrm.write_u32(c as u32, emu);
+            update_eflags(&mut emu.eflags, a, b, c as u64);
         }
         7 => {
             // cmp_rm32_imm8
             let a = modrm.read_u32(emu);
             let b = emu.mem.read_i8(emu.eip) as u32;
             emu.eip += 1;
-            let c = a as u64 - b as u64;
-            update_eflags(&mut emu.eflags, a, b, c);
+            let c = a as i64 - b as i64;
+            update_eflags(&mut emu.eflags, a, b, c as u64);
         }
         _ => unreachable!(),
     }
