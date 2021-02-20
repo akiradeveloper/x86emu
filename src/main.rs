@@ -190,17 +190,17 @@ define_inst!(add_rm32_r32, emu, {
     let modrm = ModRM::parse(emu);
     let a = modrm.read_u32(emu);
     let b = emu.read_reg(modrm.re as usize);
-    let c = a + b;
-    modrm.write_u32(c, emu);
-    // TODO eflags
+    let c = a as i64 + b as i64;
+    modrm.write_u32(c as u32, emu);
+    update_eflags(&mut emu.eflags, a, b, c as u64);
 });
 define_inst!(cmp_r32_rm32, emu, {
     emu.eip += 1;
     let modrm = ModRM::parse(emu);
     let a = emu.read_reg(modrm.re as usize);
     let b = modrm.read_u32(emu);
-    let c = a as u64 - b as u64;
-    update_eflags(&mut emu.eflags, a, b, c);
+    let c = a as i64 - b as i64;
+    update_eflags(&mut emu.eflags, a, b, c as u64);
 });
 define_inst!(code_83, emu, {
     emu.eip += 1;
