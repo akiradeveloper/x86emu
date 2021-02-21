@@ -1,4 +1,4 @@
-int abs(int x) {
+int abs_f(int x) {
     if (x >= 0) {
         return x;
     } else {
@@ -6,5 +6,5 @@ int abs(int x) {
     }
 }
 int main(void) {
-    return abs(-3);
+    return abs_f(-3);
 }
